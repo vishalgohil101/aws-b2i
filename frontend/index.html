@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Categories</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f6fa;
+            display: flex;
+            justify-content: center;
+            margin-top: 50px;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 400px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            padding: 8px 12px;
+            border: none;
+            background: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            margin-left: 10px;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            background: #f1f2f6;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .message {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <h1>Categories</h1>
+
+    <div id="message" class="message"></div>
+
+    <div class="input-group">
+        <input type="text" id="categoryInput" placeholder="Enter category name">
+        <button id="addBtn" onclick="addCategory()">Add</button>
+    </div>
+
+    <ul id="list"></ul>
+</div>
+
+<script>
+    const API_URL = "https://b3iulmtm8j.execute-api.ap-south-1.amazonaws.com/categories";
+
+    function showMessage(msg, type) {
+        const messageDiv = document.getElementById('message');
+        messageDiv.innerText = msg;
+        messageDiv.className = "message " + type;
+
+        setTimeout(() => {
+            messageDiv.innerText = "";
+        }, 3000);
+    }
+
+    async function fetchCategories() {
+        try {
+            const res = await fetch(API_URL);
+            const data = await res.json();
+
+            const list = document.getElementById('list');
+            list.innerHTML = "";
+
+            data.forEach(item => {
+                const li = document.createElement('li');
+                li.innerText = item.name;
+
+                const btn = document.createElement('button');
+                btn.innerText = "Delete";
+                btn.className = "delete-btn";
+                btn.onclick = () => deleteCategory(item.id);
+
+                li.appendChild(btn);
+                list.appendChild(li);
+            });
+
+        } catch (err) {
+            showMessage("Failed to load categories", "error");
+        }
+    }
+
+    async function addCategory() {
+        const input = document.getElementById('categoryInput');
+        const name = input.value.trim();
+        const btn = document.getElementById('addBtn');
+
+        // ✅ Frontend validation
+        if (!name) {
+            showMessage("Category name cannot be empty", "error");
+            return;
+        }
+
+        try {
+            btn.disabled = true;
+
+            const res = await fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name })
+            });
+
+            if (!res.ok) {
+                throw new Error("Failed to add category");
+            }
+
+            showMessage("Category added successfully", "success");
+
+            input.value = ""; // ✅ clear input after success
+            fetchCategories();
+
+        } catch (err) {
+            showMessage("Error adding category", "error");
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async function deleteCategory(id) {
+        try {
+            await fetch(API_URL, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id })
+            });
+
+            showMessage("Category deleted", "success");
+            fetchCategories();
+
+        } catch (err) {
+            showMessage("Error deleting category", "error");
+        }
+    }
+
+    fetchCategories();
+</script>
+
+</body>
+</html>
