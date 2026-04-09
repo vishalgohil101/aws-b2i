@@ -1,0 +1,3 @@
+/aws/aws-b2i-lambda/node_modules
+/node_modules
+.env
